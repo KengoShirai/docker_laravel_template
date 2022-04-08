@@ -1,0 +1,57 @@
+# Compose fileのバージョン指定
+version: "3"
+
+# どんなコンテナを立ち上げるか
+services:
+  # ---------------------------------
+  # PHPを動かすコンテナ
+  # ---------------------------------
+  php-apache:
+    container_name: php-apache
+    ports:
+      - "90:80"
+    build: ./config/php/
+    volumes:
+      - ./src:/var/www/html/
+      - ./config/php/php.ini:/usr/local/etc/php/php.ini
+      - ./config/php/000-default.conf:/etc/apache2/sites-enabled/000-default.conf
+    depends_on:
+      - db
+
+  # ----------------------------------
+  # MySQLを動かすコンテナ
+  # ----------------------------------
+  db:
+    container_name: db
+    ports:
+      - "4306:3306"
+    build: ./config/mysql/
+    # 永続化&設定ファイル
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      TZ: "Asia/Tokyo"
+
+  # ----------------------------------
+  # phpMyAdminを動かすコンテナ
+  # ----------------------------------
+  phpmyadmin:
+    container_name: phpmyadmin
+    ports:
+      - "4307:3307"
+    image: phpmyadmin/phpmyadmin
+    volumes:
+      - ./config/phpmyadmin/sessions:/sessions
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=db
+      - PMA_USER=user
+      - PMA_ROOT_PASSWORD=root
+      - PMA_PASSWORD=password
+    depends_on:
+      - php-apache
